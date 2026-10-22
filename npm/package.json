@@ -1,0 +1,44 @@
+{
+  "name": "hormachuelos",
+  "version": "2.1.6",
+  "description": "HORMACHUELOS in your terminal: an AI coding sidekick. Works from cmd, PowerShell, bash, zsh and fish on Windows, macOS and Linux.",
+  "license": "MIT",
+  "homepage": "https://hormachuelos.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chmoralla-code/hormachuelos-cli.git",
+    "directory": "npm"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "terminal",
+    "coding-agent",
+    "hormachuelos"
+  ],
+  "bin": {
+    "hormachuelos": "bin/hormachuelos.js",
+    "horma": "bin/hormachuelos.js"
+  },
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "postinstall.js",
+    "README.md"
+  ],
+  "os": [
+    "win32",
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}

@@ -1,0 +1,33 @@
+# Publishes the `hormachuelos` npm package with npm trusted publishing:
+# npm accepts this workflow by its GitHub identity, so no token or 2FA prompt.
+# Run it after the CLI release is live on the update feed:
+#   gh workflow run publish-npm.yml --repo chmoralla-code/hormachuelos-cli -f version=2.1.6
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish, e.g. 2.1.6 (must already be on the update feed)"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@latest
+      - name: Publish
+        working-directory: npm
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node publish.mjs --version "$VERSION" --yes
