@@ -21,13 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        # No registry-url: it writes a placeholder token that npm would try instead of the trusted login.
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
       # Trusted publishing needs npm 11.5.1 or later.
       - run: npm install -g npm@latest
       - name: Publish
         working-directory: npm
         env:
           VERSION: ${{ inputs.version }}
+          NPM_CONFIG_LOGLEVEL: verbose
         run: node publish.mjs --version "$VERSION" --yes
