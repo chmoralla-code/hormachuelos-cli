@@ -158,6 +158,26 @@ function bar(received, total) {
   process.stderr.write(`\r  ${"█".repeat(filled)}${"░".repeat(width - filled)} ${mb(received)} / ${mb(total)} MB`)
 }
 
+/**
+ * The build's bytes: the zstd copy (about 40% of the size) when this Node can unpack it,
+ * otherwise, or if that copy fails, the full file. The caller checks size and signature.
+ */
+async function fetchBuild(release, test, onProgress) {
+  const zstd = require("node:zlib").zstdDecompressSync
+  const packed = release.zst
+  if (zstd && packed && typeof packed.url === "string" && typeof release.size === "number") {
+    try {
+      const data = await get(packed.url, test, onProgress)
+      if (data.length !== packed.size) throw new Error("cut short")
+      const result = zstd(data)
+      if (result.length === release.size) return result
+    } catch {
+      // Fall back to the full file below.
+    }
+  }
+  return get(release.url, test, onProgress)
+}
+
 /** Downloads, checks and places the binary; returns its path. */
 async function install({ quiet = false } = {}) {
   const key = platformKey()
@@ -170,7 +190,7 @@ async function install({ quiet = false } = {}) {
     throw new Error(`HORMACHUELOS ${manifest.version} has no build for ${key} (available: ${known}).`)
   }
   log(`Downloading HORMACHUELOS ${manifest.version} for ${key}…`)
-  const data = await get(release.url, test, quiet ? undefined : bar)
+  const data = await fetchBuild(release, test, quiet ? undefined : bar)
   if (!quiet && process.stderr.isTTY) process.stderr.write("\n")
   if (release.size !== undefined && data.length !== release.size) throw new Error("The download was cut short. Try again.")
   if (!verifySignature(data, release.signature, publicKey))
