@@ -10,6 +10,22 @@
 const { spawn } = require("node:child_process")
 const { install, installed } = require("../lib/install.js")
 
+// What the app's terminal library switches on, switched off again: mouse, focus and paste reports,
+// synchronized output, grapheme and theme reports, the keyboard flags, then the cursor shown.
+const MODES_OFF =
+  "[?1000l[?1002l[?1003l[?1006l[?1004l[?2004l[?2026l[?2027l[?2031l[<u[>4;0m[?25h"
+
+/**
+ * What to write to the terminal once the app has ended. An app that was killed
+ * (Task Manager, Stop-Process -Force, kill -9) never cleaned up: its mouse
+ * reports would keep printing into the shell. The cursor is saved before
+ * leaving the full-screen view, so on a screen that was already the shell's
+ * the restore puts it back where it was.
+ */
+function afterExit(code, signal) {
+  return code === 0 && !signal ? "" : `7[?1049l${MODES_OFF}`
+}
+
 async function main() {
   let binary = installed()
   if (!binary) {
@@ -34,13 +50,18 @@ async function main() {
     process.exit(1)
   })
   child.on("exit", (code, signal) => {
-    if (signal) {
-      process.removeAllListeners(signal)
-      process.kill(process.pid, signal)
-      return
-    }
-    process.exit(code ?? 0)
+    const reset = process.stdout.isTTY ? afterExit(code, signal) : ""
+    process.stdout.write(reset, () => {
+      if (signal) {
+        process.removeAllListeners(signal)
+        process.kill(process.pid, signal)
+        return
+      }
+      process.exit(code ?? 0)
+    })
   })
 }
 
-main()
+if (require.main === module) main()
+
+module.exports = { afterExit }
